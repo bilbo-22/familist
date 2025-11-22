@@ -294,31 +294,21 @@ const App: React.FC = () => {
   const handleTouchStart = (e: React.TouchEvent, index: number) => {
     dragItem.current = index;
     touchStartY.current = e.touches[0].clientY;
-    touchDraggedElement.current = e.currentTarget as HTMLElement;
-    isDragging.current = false; // Not dragging yet, just touched
+    touchDraggedElement.current = e.currentTarget.parentElement as HTMLElement;
+    isDragging.current = true;
+
+    // Add visual feedback to the list item
+    if (touchDraggedElement.current) {
+      touchDraggedElement.current.style.opacity = '0.5';
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent, index: number) => {
     if (dragItem.current === null) return;
 
+    e.preventDefault(); // Handle is for dragging only, so always prevent scroll
+
     const touchY = e.touches[0].clientY;
-    const moveDistance = Math.abs(touchY - touchStartY.current);
-
-    // Only start dragging if moved beyond threshold
-    if (!isDragging.current && moveDistance < DRAG_THRESHOLD) {
-      return; // Allow normal scrolling
-    }
-
-    // Now we're dragging, prevent scroll
-    if (!isDragging.current) {
-      isDragging.current = true;
-      if (touchDraggedElement.current) {
-        touchDraggedElement.current.style.opacity = '0.5';
-      }
-    }
-
-    e.preventDefault(); // Only prevent after threshold
-
     const elements = document.querySelectorAll('[data-list-item]');
 
     // Find which element we're over

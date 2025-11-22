@@ -42,9 +42,6 @@ const ListItem: React.FC<ListItemProps> = ({
       onDragEnter={(e) => onDragEnter(e, index)}
       onDragEnd={onDragEnd}
       onDragOver={(e) => e.preventDefault()}
-      onTouchStart={(e) => onTouchStart(e, index)}
-      onTouchMove={(e) => onTouchMove(e, index)}
-      onTouchEnd={onTouchEnd}
       className={`
         group flex items-center gap-3 p-4 mb-3 rounded-xl shadow-sm border 
         transition-all duration-200 ease-out hover:shadow-md relative
@@ -55,8 +52,13 @@ const ListItem: React.FC<ListItemProps> = ({
         }
       `}
     >
-      {/* Drag Handle */}
-      <div className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1">
+      {/* Drag Handle - Mobile dragging only works here */}
+      <div
+        className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 touch-none"
+        onTouchStart={(e) => onTouchStart(e, index)}
+        onTouchMove={(e) => onTouchMove(e, index)}
+        onTouchEnd={onTouchEnd}
+      >
         <GripVertical size={18} />
       </div>
 
