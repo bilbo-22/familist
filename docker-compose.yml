@@ -6,7 +6,7 @@ services:
       args:
         - GEMINI_API_KEY=${GEMINI_API_KEY}
     ports:
-      - "3000:3000"
+      - "3001:3001"
     volumes:
       - ./database.json:/app/database.json
     restart: always

@@ -13,7 +13,7 @@ import { api } from './services/api';
 // Determine Socket URL
 // Safely check for import.meta.env (Vite specific) to avoid runtime errors in other environments
 const isProduction = (import.meta as any).env?.MODE === 'production';
-const SOCKET_URL = isProduction ? window.location.origin : 'http://localhost:3000';
+const SOCKET_URL = isProduction ? window.location.origin : 'http://localhost:3001';
 
 const App: React.FC = () => {
   // --- State: Auth ---

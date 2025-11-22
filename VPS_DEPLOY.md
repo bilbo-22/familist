@@ -34,7 +34,7 @@ We use `docker-compose` to build and run the container. It automatically mounts 
 docker-compose up -d --build
 ```
 
-That's it! Your app is running on port **3000**.
+That's it! Your app is running on port **3001**.
 
 ## 3. Updates
 
@@ -64,7 +64,7 @@ server {
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

@@ -22,7 +22,7 @@ const io = new Server(httpServer, {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const DB_FILE = path.join(__dirname, 'database.json');
 
 app.use(express.json());

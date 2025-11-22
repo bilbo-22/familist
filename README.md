@@ -53,7 +53,7 @@
     ```
     This will start both the frontend (Vite) and the backend server concurrently.
     -   Frontend: `http://localhost:5173`
-    -   Backend: `http://localhost:3000`
+    -   Backend: `http://localhost:3001`
 
 ## 📦 Deployment
 

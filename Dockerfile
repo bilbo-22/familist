@@ -19,5 +19,5 @@ COPY --from=builder /app/server.js ./
 # Copy empty database as a starting point if volume is empty
 COPY --from=builder /app/database.json ./
 
-EXPOSE 3000
+EXPOSE 3001
 CMD ["node", "server.js"]
