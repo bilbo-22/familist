@@ -57,10 +57,9 @@
 
 ## 📦 Deployment
 
-This project is configured for deployment on **Google Cloud App Engine** or **VPS with Docker**.
+This project is configured for deployment on **Docker**.
 
--   See [DEPLOY.md](./DEPLOY.md) for Google Cloud.
--   See [VPS_DEPLOY.md](./VPS_DEPLOY.md) for VPS/Docker.
+-   See [DOCKER_DEPLOY.md](./DOCKER_DEPLOY.md) for Docker deployment.
 
 ## 🤝 Contributing
 

@@ -23,15 +23,16 @@ nano .env
 Paste your key:
 ```env
 GEMINI_API_KEY=your_actual_api_key_here
+VITE_APP_PASSWORD=your_actual_password_here
 ```
 
 ## 2. Run with Docker Compose
 
-We use `docker-compose` to build and run the container. It automatically mounts your `database.json` so your data persists even if you rebuild the container.
+We use `docker compose` to build and run the container. It automatically mounts your `database.json` so your data persists even if you rebuild the container.
 
 ```bash
 # Build and start in detached mode (background)
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 That's it! Your app is running on port **3001**.
