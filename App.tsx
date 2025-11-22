@@ -43,6 +43,8 @@ const App: React.FC = () => {
   // Touch DnD State
   const touchStartY = useRef<number>(0);
   const touchDraggedElement = useRef<HTMLElement | null>(null);
+  const isDragging = useRef<boolean>(false);
+  const DRAG_THRESHOLD = 10; // pixels
 
   // --- Initial Setup & Effects ---
 
@@ -293,19 +295,30 @@ const App: React.FC = () => {
     dragItem.current = index;
     touchStartY.current = e.touches[0].clientY;
     touchDraggedElement.current = e.currentTarget as HTMLElement;
-
-    // Add visual feedback
-    if (touchDraggedElement.current) {
-      touchDraggedElement.current.style.opacity = '0.5';
-    }
+    isDragging.current = false; // Not dragging yet, just touched
   };
 
   const handleTouchMove = (e: React.TouchEvent, index: number) => {
-    e.preventDefault(); // Prevent scrolling while dragging
-
     if (dragItem.current === null) return;
 
     const touchY = e.touches[0].clientY;
+    const moveDistance = Math.abs(touchY - touchStartY.current);
+
+    // Only start dragging if moved beyond threshold
+    if (!isDragging.current && moveDistance < DRAG_THRESHOLD) {
+      return; // Allow normal scrolling
+    }
+
+    // Now we're dragging, prevent scroll
+    if (!isDragging.current) {
+      isDragging.current = true;
+      if (touchDraggedElement.current) {
+        touchDraggedElement.current.style.opacity = '0.5';
+      }
+    }
+
+    e.preventDefault(); // Only prevent after threshold
+
     const elements = document.querySelectorAll('[data-list-item]');
 
     // Find which element we're over
@@ -336,6 +349,12 @@ const App: React.FC = () => {
   };
 
   const handleTouchEnd = () => {
+    // Only save if we actually dragged
+    if (isDragging.current) {
+      const currentListItems = items.filter(i => i.listId === activeListId);
+      api.updateListOrder(activeListId, currentListItems).catch(console.error);
+    }
+
     // Reset visual feedback
     if (touchDraggedElement.current) {
       touchDraggedElement.current.style.opacity = '1';
@@ -345,10 +364,7 @@ const App: React.FC = () => {
     dragItem.current = null;
     dragOverItem.current = null;
     touchStartY.current = 0;
-
-    // Send the new order to the server
-    const currentListItems = items.filter(i => i.listId === activeListId);
-    api.updateListOrder(activeListId, currentListItems).catch(console.error);
+    isDragging.current = false;
   };
 
   // --- Render Logic ---

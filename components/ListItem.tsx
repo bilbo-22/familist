@@ -45,7 +45,6 @@ const ListItem: React.FC<ListItemProps> = ({
       onTouchStart={(e) => onTouchStart(e, index)}
       onTouchMove={(e) => onTouchMove(e, index)}
       onTouchEnd={onTouchEnd}
-      style={{ touchAction: index >= 0 ? 'none' : 'auto' }}
       className={`
         group flex items-center gap-3 p-4 mb-3 rounded-xl shadow-sm border 
         transition-all duration-200 ease-out hover:shadow-md relative
