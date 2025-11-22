@@ -40,6 +40,10 @@ const App: React.FC = () => {
   const dragOverItem = useRef<number | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
+  // Touch DnD State
+  const touchStartY = useRef<number>(0);
+  const touchDraggedElement = useRef<HTMLElement | null>(null);
+
   // --- Initial Setup & Effects ---
 
   useEffect(() => {
@@ -284,6 +288,69 @@ const App: React.FC = () => {
     api.updateListOrder(activeListId, currentListItems).catch(console.error);
   };
 
+  // --- Touch Event Handlers for Mobile ---
+  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+    dragItem.current = index;
+    touchStartY.current = e.touches[0].clientY;
+    touchDraggedElement.current = e.currentTarget as HTMLElement;
+
+    // Add visual feedback
+    if (touchDraggedElement.current) {
+      touchDraggedElement.current.style.opacity = '0.5';
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent, index: number) => {
+    e.preventDefault(); // Prevent scrolling while dragging
+
+    if (dragItem.current === null) return;
+
+    const touchY = e.touches[0].clientY;
+    const elements = document.querySelectorAll('[data-list-item]');
+
+    // Find which element we're over
+    let newIndex = dragItem.current;
+    elements.forEach((el, idx) => {
+      const rect = el.getBoundingClientRect();
+      if (touchY >= rect.top && touchY <= rect.bottom) {
+        newIndex = idx;
+      }
+    });
+
+    if (newIndex !== dragItem.current && newIndex !== dragOverItem.current) {
+      dragOverItem.current = newIndex;
+
+      const currentListItems = items.filter(i => i.listId === activeListId);
+      const draggedItem = currentListItems[dragItem.current];
+      const newListItems = [...currentListItems];
+      newListItems.splice(dragItem.current, 1);
+      newListItems.splice(newIndex, 0, draggedItem);
+
+      setItems(prev => {
+        const otherItems = prev.filter(i => i.listId !== activeListId);
+        return [...newListItems, ...otherItems];
+      });
+
+      dragItem.current = newIndex;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    // Reset visual feedback
+    if (touchDraggedElement.current) {
+      touchDraggedElement.current.style.opacity = '1';
+      touchDraggedElement.current = null;
+    }
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+    touchStartY.current = 0;
+
+    // Send the new order to the server
+    const currentListItems = items.filter(i => i.listId === activeListId);
+    api.updateListOrder(activeListId, currentListItems).catch(console.error);
+  };
+
   // --- Render Logic ---
 
   if (!isAuthenticated) {
@@ -357,6 +424,9 @@ const App: React.FC = () => {
               onDragStart={handleDragStart}
               onDragEnter={handleDragEnter}
               onDragEnd={handleDragEnd}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             />
           ))}
         </div>
@@ -382,6 +452,9 @@ const App: React.FC = () => {
               onDragStart={(e) => e.preventDefault()}
               onDragEnter={(e) => { }}
               onDragEnd={(e) => { }}
+              onTouchStart={(e) => { }}
+              onTouchMove={(e) => { }}
+              onTouchEnd={() => { }}
             />
           ))}
         </div>

@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 
+# Database - user data should not be tracked
+database.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
