@@ -5,6 +5,7 @@ services:
       context: .
       args:
         - GEMINI_API_KEY=${GEMINI_API_KEY}
+        - VITE_APP_PASSWORD=${VITE_APP_PASSWORD}
     ports:
       - "3001:3001"
     volumes:
