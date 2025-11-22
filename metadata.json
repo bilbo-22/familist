@@ -1,0 +1,7 @@
+{
+  "name": "Familist",
+  "description": "A shared list app for couples with AI-powered voice entry, RTL support, and a beautiful peach aesthetic.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
