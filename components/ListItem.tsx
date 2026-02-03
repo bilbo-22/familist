@@ -54,7 +54,8 @@ const ListItem: React.FC<ListItemProps> = ({
     >
       {/* Drag Handle - Mobile dragging only works here */}
       <div
-        className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1"
+        className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 p-2 -m-2"
+        style={{ touchAction: 'none' }}
         onTouchStart={(e) => onTouchStart(e, index)}
         onTouchMove={(e) => onTouchMove(e, index)}
         onTouchEnd={onTouchEnd}
