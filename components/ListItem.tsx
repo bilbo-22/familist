@@ -13,10 +13,10 @@ interface ListItemProps {
   onDragEnter: (e: React.DragEvent, index: number) => void;
   onDragEnd: (e: React.DragEvent) => void;
 
-  // Touch Props for Mobile
-  onTouchStart: (e: React.TouchEvent, index: number) => void;
-  onTouchMove: (e: React.TouchEvent, index: number) => void;
-  onTouchEnd: () => void;
+  // Pointer Props for Mobile/Desktop handle drag
+  onPointerStart: (e: React.PointerEvent, index: number) => void;
+  onPointerMove: (e: React.PointerEvent, index: number) => void;
+  onPointerEnd: () => void;
 
   index: number;
 }
@@ -28,19 +28,20 @@ const ListItem: React.FC<ListItemProps> = ({
   onDragStart,
   onDragEnter,
   onDragEnd,
-  onTouchStart,
-  onTouchMove,
-  onTouchEnd,
+  onPointerStart,
+  onPointerMove,
+  onPointerEnd,
   index
 }) => {
+  const isDraggable = index >= 0;
 
   return (
     <div
-      data-list-item
-      draggable
-      onDragStart={(e) => onDragStart(e, index)}
-      onDragEnter={(e) => onDragEnter(e, index)}
-      onDragEnd={onDragEnd}
+      data-draggable-item={isDraggable ? 'true' : undefined}
+      draggable={isDraggable}
+      onDragStart={isDraggable ? (e) => onDragStart(e, index) : undefined}
+      onDragEnter={isDraggable ? (e) => onDragEnter(e, index) : undefined}
+      onDragEnd={isDraggable ? onDragEnd : undefined}
       onDragOver={(e) => e.preventDefault()}
       className={`
         group flex items-center gap-3 p-4 mb-3 rounded-xl shadow-sm border 
@@ -56,9 +57,10 @@ const ListItem: React.FC<ListItemProps> = ({
       <div
         className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 p-2 -m-2"
         style={{ touchAction: 'none' }}
-        onTouchStart={(e) => onTouchStart(e, index)}
-        onTouchMove={(e) => onTouchMove(e, index)}
-        onTouchEnd={onTouchEnd}
+        onPointerDown={(e) => onPointerStart(e, index)}
+        onPointerMove={(e) => onPointerMove(e, index)}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
       >
         <GripVertical size={18} />
       </div>

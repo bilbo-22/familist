@@ -39,12 +39,41 @@ const App: React.FC = () => {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const itemsRef = useRef<ListItemType[]>([]);
 
-  // Touch DnD State
-  const touchStartY = useRef<number>(0);
+  // Pointer DnD State
+  const pointerStartY = useRef<number>(0);
   const touchDraggedElement = useRef<HTMLElement | null>(null);
   const isDragging = useRef<boolean>(false);
   const DRAG_THRESHOLD = 10; // pixels
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  const reorderActiveItemsInList = useCallback((allItems: ListItemType[], fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return allItems;
+
+    const listItems = allItems.filter(i => i.listId === activeListId);
+    const activeListItems = listItems.filter(i => !i.completed);
+    const completedListItems = listItems.filter(i => i.completed);
+
+    if (
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= activeListItems.length ||
+      toIndex >= activeListItems.length
+    ) {
+      return allItems;
+    }
+
+    const nextActiveItems = [...activeListItems];
+    const [movedItem] = nextActiveItems.splice(fromIndex, 1);
+    nextActiveItems.splice(toIndex, 0, movedItem);
+
+    const otherItems = allItems.filter(i => i.listId !== activeListId);
+    return [...nextActiveItems, ...completedListItems, ...otherItems];
+  }, [activeListId]);
 
   // --- Initial Setup & Effects ---
 
@@ -258,24 +287,8 @@ const App: React.FC = () => {
     dragOverItem.current = index;
 
     if (dragItem.current !== null && dragItem.current !== index) {
-      // We need to calculate the new order based on the filtered view
-      const currentListItems = items.filter(i => i.listId === activeListId);
-
-      const draggedItem = currentListItems[dragItem.current];
-      // const targetItem = currentListItems[index];
-
-      // Create a new array for the UI
-      const newListItems = [...currentListItems];
-      newListItems.splice(dragItem.current, 1);
-      newListItems.splice(index, 0, draggedItem);
-
-      // Update Global Items State by replacing the chunk that belongs to this list
-      setItems(prev => {
-        const otherItems = prev.filter(i => i.listId !== activeListId);
-        // We need to be careful to preserve sorting. 
-        // For now, assuming the "others" are just appended.
-        return [...newListItems, ...otherItems];
-      });
+      const fromIndex = dragItem.current;
+      setItems(prev => reorderActiveItemsInList(prev, fromIndex, index));
 
       dragItem.current = index;
     }
@@ -286,16 +299,19 @@ const App: React.FC = () => {
     dragOverItem.current = null;
 
     // Send the new order to the server
-    const currentListItems = items.filter(i => i.listId === activeListId);
+    const currentListItems = itemsRef.current.filter(i => i.listId === activeListId);
     api.updateListOrder(activeListId, currentListItems).catch(console.error);
   };
 
-  // --- Touch Event Handlers for Mobile ---
-  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+  // --- Pointer Event Handlers for Mobile/Desktop ---
+  const handlePointerStart = (e: React.PointerEvent, index: number) => {
+    if (index < 0) return;
     dragItem.current = index;
-    touchStartY.current = e.touches[0].clientY;
+    dragOverItem.current = index;
+    pointerStartY.current = e.clientY;
     touchDraggedElement.current = e.currentTarget.parentElement as HTMLElement;
-    isDragging.current = true;
+    isDragging.current = false;
+    e.currentTarget.setPointerCapture(e.pointerId);
 
     // Add visual feedback to the list item
     if (touchDraggedElement.current) {
@@ -303,45 +319,40 @@ const App: React.FC = () => {
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent, index: number) => {
+  const handlePointerMove = (e: React.PointerEvent, index: number) => {
     if (dragItem.current === null) return;
 
+    const pointerY = e.clientY;
+    if (!isDragging.current && Math.abs(pointerY - pointerStartY.current) < DRAG_THRESHOLD) {
+      return;
+    }
+    isDragging.current = true;
     e.preventDefault(); // Handle is for dragging only, so always prevent scroll
 
-    const touchY = e.touches[0].clientY;
-    const elements = document.querySelectorAll('[data-list-item]');
+    const elements = document.querySelectorAll('[data-draggable-item="true"]');
 
     // Find which element we're over
     let newIndex = dragItem.current;
     elements.forEach((el, idx) => {
       const rect = el.getBoundingClientRect();
-      if (touchY >= rect.top && touchY <= rect.bottom) {
+      if (pointerY >= rect.top && pointerY <= rect.bottom) {
         newIndex = idx;
       }
     });
 
     if (newIndex !== dragItem.current && newIndex !== dragOverItem.current) {
       dragOverItem.current = newIndex;
-
-      const currentListItems = items.filter(i => i.listId === activeListId);
-      const draggedItem = currentListItems[dragItem.current];
-      const newListItems = [...currentListItems];
-      newListItems.splice(dragItem.current, 1);
-      newListItems.splice(newIndex, 0, draggedItem);
-
-      setItems(prev => {
-        const otherItems = prev.filter(i => i.listId !== activeListId);
-        return [...newListItems, ...otherItems];
-      });
+      const fromIndex = dragItem.current;
+      setItems(prev => reorderActiveItemsInList(prev, fromIndex, newIndex));
 
       dragItem.current = newIndex;
     }
   };
 
-  const handleTouchEnd = () => {
+  const handlePointerEnd = () => {
     // Only save if we actually dragged
     if (isDragging.current) {
-      const currentListItems = items.filter(i => i.listId === activeListId);
+      const currentListItems = itemsRef.current.filter(i => i.listId === activeListId);
       api.updateListOrder(activeListId, currentListItems).catch(console.error);
     }
 
@@ -353,7 +364,7 @@ const App: React.FC = () => {
 
     dragItem.current = null;
     dragOverItem.current = null;
-    touchStartY.current = 0;
+    pointerStartY.current = 0;
     isDragging.current = false;
   };
 
@@ -430,9 +441,9 @@ const App: React.FC = () => {
               onDragStart={handleDragStart}
               onDragEnter={handleDragEnter}
               onDragEnd={handleDragEnd}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+              onPointerStart={handlePointerStart}
+              onPointerMove={handlePointerMove}
+              onPointerEnd={handlePointerEnd}
             />
           ))}
         </div>
@@ -458,9 +469,9 @@ const App: React.FC = () => {
               onDragStart={(e) => e.preventDefault()}
               onDragEnter={(e) => { }}
               onDragEnd={(e) => { }}
-              onTouchStart={(e) => { }}
-              onTouchMove={(e) => { }}
-              onTouchEnd={() => { }}
+              onPointerStart={(e) => { }}
+              onPointerMove={(e) => { }}
+              onPointerEnd={() => { }}
             />
           ))}
         </div>
