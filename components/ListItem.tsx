@@ -26,6 +26,15 @@ const ListItem: React.FC<ListItemProps> = ({
   index
 }) => {
   const isDraggable = index >= 0;
+  const containerStateClass = item.completed
+    ? 'bg-gray-50 dark:bg-gray-800/50 border-transparent opacity-75'
+    : 'bg-white dark:bg-dark-card border-peach-100 dark:border-gray-700';
+  const checkboxStateClass = item.completed
+    ? 'bg-peach-400 border-peach-400 text-white'
+    : 'border-gray-300 dark:border-gray-500 hover:border-peach-300';
+  const textStateClass = item.completed
+    ? 'text-gray-400 dark:text-gray-500 line-through decoration-peach-300 decoration-2'
+    : 'text-gray-800 dark:text-gray-100';
 
   return (
     <div
@@ -34,13 +43,9 @@ const ListItem: React.FC<ListItemProps> = ({
         group flex items-center gap-3 p-4 mb-3 rounded-xl shadow-sm border 
         transition-all duration-200 ease-out hover:shadow-md relative
         cursor-grab active:cursor-grabbing
-        ${item.completed
-          ? 'bg-gray-50 dark:bg-gray-800/50 border-transparent opacity-75'
-          : 'bg-white dark:bg-dark-card border-peach-100 dark:border-gray-700'
-        }
+        ${containerStateClass}
       `}
     >
-      {/* Drag Handle - Mobile dragging only works here */}
       <div
         className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 p-2 -m-2"
         style={{ touchAction: 'none' }}
@@ -57,32 +62,24 @@ const ListItem: React.FC<ListItemProps> = ({
         onClick={() => onToggle(item.id)}
         className={`
           flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
-          ${item.completed
-            ? 'bg-peach-400 border-peach-400 text-white'
-            : 'border-gray-300 dark:border-gray-500 hover:border-peach-300'
-          }
+          ${checkboxStateClass}
         `}
       >
         {item.completed && <Check size={14} strokeWidth={3} />}
       </button>
 
-      {/* Text Content */}
       <div className="flex-1 min-w-0 flex flex-col select-none">
         <span
           dir="auto"
           className={`
             text-lg truncate transition-all duration-300
-            ${item.completed
-              ? 'text-gray-400 dark:text-gray-500 line-through decoration-peach-300 decoration-2'
-              : 'text-gray-800 dark:text-gray-100'
-            }
+            ${textStateClass}
           `}
         >
           {item.text}
         </span>
       </div>
 
-      {/* Delete Action */}
       <button
         onClick={() => onDelete(item.id)}
         className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all"

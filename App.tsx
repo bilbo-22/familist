@@ -14,19 +14,13 @@ import { api } from './services/api';
 // Safely check for import.meta.env (Vite specific) to avoid runtime errors in other environments
 const isProduction = (import.meta as any).env?.MODE === 'production';
 const SOCKET_URL = isProduction ? window.location.origin : 'http://localhost:3001';
+const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD || 'admin';
 
 const App: React.FC = () => {
-  // --- State: Auth ---
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // --- State: Lists ---
   const [lists, setLists] = useState<List[]>([]);
   const [activeListId, setActiveListId] = useState<string>('');
-
-  // --- State: Items ---
   const [items, setItems] = useState<ListItemType[]>([]);
-
-  // --- State: UI ---
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('familist_theme');
     return (saved as Theme) || Theme.LIGHT;
@@ -35,18 +29,20 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  // DnD State
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const itemsRef = useRef<ListItemType[]>([]);
 
-  // Pointer DnD State
   const pointerStartY = useRef<number>(0);
   const touchDraggedElement = useRef<HTMLElement | null>(null);
   const isDragging = useRef<boolean>(false);
-  const MOUSE_DRAG_THRESHOLD = 4; // pixels
-  const TOUCH_PEN_DRAG_THRESHOLD = 10; // pixels
+  const MOUSE_DRAG_THRESHOLD = 4;
+  const TOUCH_PEN_DRAG_THRESHOLD = 10;
+
+  const handleNoopPointerStart = useCallback((_e: React.PointerEvent, _index: number) => {}, []);
+  const handleNoopPointerMove = useCallback((_e: React.PointerEvent) => {}, []);
+  const handleNoopPointerEnd = useCallback(() => {}, []);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -76,17 +72,13 @@ const App: React.FC = () => {
     return [...nextActiveItems, ...completedListItems, ...otherItems];
   }, [activeListId]);
 
-  // --- Initial Setup & Effects ---
-
   useEffect(() => {
     const token = localStorage.getItem('familist_token');
-    const appPassword = import.meta.env.VITE_APP_PASSWORD || 'admin';
-    if (token === appPassword) {
+    if (token === APP_PASSWORD) {
       setIsAuthenticated(true);
     }
   }, []);
 
-  // Socket.io Connection
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -102,16 +94,13 @@ const App: React.FC = () => {
       setIsConnected(false);
     });
 
-    // Real-time Sync Listener
     socketRef.current.on('sync', (data: { lists: List[], items: ListItemType[] }) => {
       console.log('Received sync', data);
       setLists(data.lists || []);
       setItems(data.items || []);
 
-      // Set active list if none selected
       setActiveListId(prev => {
         if (!prev && data.lists.length > 0) return data.lists[0].id;
-        // If current active list was deleted, switch to first
         if (prev && !data.lists.find(l => l.id === prev) && data.lists.length > 0) {
           return data.lists[0].id;
         }
@@ -119,7 +108,6 @@ const App: React.FC = () => {
       });
     });
 
-    // Granular Events
     socketRef.current.on('list:created', (newList: List) => {
       setLists(prev => [...prev, newList]);
     });
@@ -132,8 +120,6 @@ const App: React.FC = () => {
 
     socketRef.current.on('item:added', (newItem: ListItemType) => {
       setItems(prev => {
-        // Avoid duplicates if we optimistically added it (check by ID if possible, but UUIDs generated on client vs server might differ if not careful. 
-        // In this app, IDs are generated on client, so we can check for existence.)
         if (prev.some(i => i.id === newItem.id)) return prev;
         return [newItem, ...prev];
       });
@@ -154,7 +140,6 @@ const App: React.FC = () => {
       });
     });
 
-    // Fetch initial data manually to be safe
     api.getData().then(data => {
       setLists(data.lists || []);
       setItems(data.items || []);
@@ -175,10 +160,8 @@ const App: React.FC = () => {
     localStorage.setItem('familist_theme', theme);
   }, [theme]);
 
-  // --- Auth Handlers ---
   const handleLogin = (password: string) => {
-    const appPassword = import.meta.env.VITE_APP_PASSWORD || 'admin';
-    if (password === appPassword) {
+    if (password === APP_PASSWORD) {
       localStorage.setItem('familist_token', password);
       setIsAuthenticated(true);
     }
@@ -191,7 +174,6 @@ const App: React.FC = () => {
     socketRef.current?.disconnect();
   };
 
-  // --- List Management ---
   const createList = useCallback((name: string) => {
     const newList: List = {
       id: uuidv4(),
@@ -199,15 +181,12 @@ const App: React.FC = () => {
       createdAt: Date.now(),
     };
 
-    // Optimistic Update
     setLists(prev => [...prev, newList]);
     setActiveListId(newList.id);
     setIsSidebarOpen(false);
 
-    // API Call
     api.createList(newList).catch(err => {
       console.error("Failed to create list", err);
-      // Revert state if needed, but next sync will fix it
     });
   }, []);
 
@@ -217,7 +196,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // Optimistic Update
     setLists(prev => prev.filter(l => l.id !== id));
     setItems(prev => prev.filter(i => i.listId !== id));
 
@@ -228,11 +206,9 @@ const App: React.FC = () => {
       }
     }
 
-    // API Call
     api.deleteList(id).catch(console.error);
   }, [lists, activeListId]);
 
-  // --- Item Handlers ---
   const toggleTheme = () => setTheme(prev => prev === Theme.LIGHT ? Theme.DARK : Theme.LIGHT);
 
   const addItems = useCallback((texts: string[]) => {
@@ -247,10 +223,8 @@ const App: React.FC = () => {
         createdAt: Date.now(),
       };
 
-      // Optimistic Update
       setItems(prev => [newItem, ...prev]);
 
-      // API Call
       api.addItem(newItem).catch(console.error);
     });
   }, [activeListId]);
@@ -261,24 +235,19 @@ const App: React.FC = () => {
 
     const newStatus = !item.completed;
 
-    // Optimistic Update
     setItems(prev => prev.map(i =>
       i.id === id ? { ...i, completed: newStatus } : i
     ));
 
-    // API Call
     api.toggleItem(id, newStatus).catch(console.error);
   }, [items]);
 
   const deleteItem = useCallback((id: string) => {
-    // Optimistic Update
     setItems(prev => prev.filter(item => item.id !== id));
 
-    // API Call
     api.deleteItem(id).catch(console.error);
   }, []);
 
-  // --- Pointer Event Handlers (Unified for Mobile/Desktop) ---
   const handlePointerStart = (e: React.PointerEvent, index: number) => {
     if (index < 0) return;
     dragItem.current = index;
@@ -288,7 +257,6 @@ const App: React.FC = () => {
     isDragging.current = false;
     e.currentTarget.setPointerCapture(e.pointerId);
 
-    // Add visual feedback to the list item
     if (touchDraggedElement.current) {
       touchDraggedElement.current.style.opacity = '0.5';
     }
@@ -310,7 +278,6 @@ const App: React.FC = () => {
 
     const elements = document.querySelectorAll('[data-draggable-item="true"]');
 
-    // Find which element we're over
     let newIndex = dragItem.current;
     elements.forEach((el, idx) => {
       const rect = el.getBoundingClientRect();
@@ -329,13 +296,11 @@ const App: React.FC = () => {
   };
 
   const handlePointerEnd = () => {
-    // Only save if we actually dragged
     if (isDragging.current) {
       const currentListItems = itemsRef.current.filter(i => i.listId === activeListId);
       api.updateListOrder(activeListId, currentListItems).catch(console.error);
     }
 
-    // Reset visual feedback
     if (touchDraggedElement.current) {
       touchDraggedElement.current.style.opacity = '1';
       touchDraggedElement.current = null;
@@ -347,32 +312,17 @@ const App: React.FC = () => {
     isDragging.current = false;
   };
 
-  // --- Render Logic ---
-
   if (!isAuthenticated) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
   const currentList = lists.find(l => l.id === activeListId);
-
-  // Safety check
-  if (!currentList && lists.length > 0 && activeListId) {
-    // Logic handled in useEffect, but render safety here
-  }
-
   const listItems = items.filter(i => i.listId === activeListId);
-  // Simple client-side sort to keep completed at bottom if desired, 
-  // BUT for DnD to work, we usually respect the array order.
-  // Let's respect array order for "Active" items, and push "Completed" to bottom visually if we want,
-  // or just render in order. The previous design separated them. 
-  // To support DnD properly with the separator, we usually only drag active items.
-
   const activeItems = listItems.filter(i => !i.completed);
   const completedItems = listItems.filter(i => i.completed);
 
   return (
     <div className="min-h-screen flex flex-col pb-32 transition-colors duration-500">
-      {/* Connection Indicator (subtle) */}
       {!isConnected && (
         <div className="bg-red-500 h-1 w-full fixed top-0 left-0 z-50" title="Disconnected - attempting to reconnect..." />
       )}
@@ -397,7 +347,6 @@ const App: React.FC = () => {
 
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 pt-6">
 
-        {/* Empty State */}
         {listItems.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-600">
             <div className="w-24 h-24 bg-peach-100 dark:bg-dark-card rounded-full flex items-center justify-center mb-4">
@@ -408,7 +357,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Active Items */}
         <div className="space-y-1">
           {activeItems.map((item, index) => (
             <ListItem
@@ -424,7 +372,6 @@ const App: React.FC = () => {
           ))}
         </div>
 
-        {/* Completed Items Separator */}
         {completedItems.length > 0 && activeItems.length > 0 && (
           <div className="my-6 flex items-center gap-4">
             <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1"></div>
@@ -433,18 +380,17 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Completed Items */}
         <div className="space-y-1 opacity-70 hover:opacity-100 transition-opacity">
           {completedItems.map((item) => (
             <ListItem
               key={item.id}
-              index={-1} // Disable drag for completed
+              index={-1}
               item={item}
               onToggle={toggleItem}
               onDelete={deleteItem}
-              onPointerStart={(e) => { }}
-              onPointerMove={() => { }}
-              onPointerEnd={() => { }}
+              onPointerStart={handleNoopPointerStart}
+              onPointerMove={handleNoopPointerMove}
+              onPointerEnd={handleNoopPointerEnd}
             />
           ))}
         </div>

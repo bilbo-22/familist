@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Helper to convert Blob to Base64
-const blobToBase64 = (blob: Blob): Promise<string> => {
+function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -11,7 +11,13 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
-};
+}
+
+function parseItemsFromResponse(text: string | undefined): string[] {
+  if (!text) return [];
+  const parsed = JSON.parse(text);
+  return parsed.items || [];
+}
 
 export const extractListFromAudio = async (audioBlob: Blob): Promise<string[]> => {
   try {
@@ -53,11 +59,7 @@ export const extractListFromAudio = async (audioBlob: Blob): Promise<string[]> =
       }
     });
 
-    const text = response.text;
-    if (!text) return [];
-
-    const parsed = JSON.parse(text);
-    return parsed.items || [];
+    return parseItemsFromResponse(response.text);
 
   } catch (error) {
     console.error("Error extracting list from audio:", error);
