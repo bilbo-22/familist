@@ -8,14 +8,9 @@ interface ListItemProps {
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
 
-  // DnD Props
-  onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragEnter: (e: React.DragEvent, index: number) => void;
-  onDragEnd: (e: React.DragEvent) => void;
-
   // Pointer Props for Mobile/Desktop handle drag
   onPointerStart: (e: React.PointerEvent, index: number) => void;
-  onPointerMove: (e: React.PointerEvent, index: number) => void;
+  onPointerMove: (e: React.PointerEvent) => void;
   onPointerEnd: () => void;
 
   index: number;
@@ -25,9 +20,6 @@ const ListItem: React.FC<ListItemProps> = ({
   item,
   onToggle,
   onDelete,
-  onDragStart,
-  onDragEnter,
-  onDragEnd,
   onPointerStart,
   onPointerMove,
   onPointerEnd,
@@ -38,11 +30,6 @@ const ListItem: React.FC<ListItemProps> = ({
   return (
     <div
       data-draggable-item={isDraggable ? 'true' : undefined}
-      draggable={isDraggable}
-      onDragStart={isDraggable ? (e) => onDragStart(e, index) : undefined}
-      onDragEnter={isDraggable ? (e) => onDragEnter(e, index) : undefined}
-      onDragEnd={isDraggable ? onDragEnd : undefined}
-      onDragOver={(e) => e.preventDefault()}
       className={`
         group flex items-center gap-3 p-4 mb-3 rounded-xl shadow-sm border 
         transition-all duration-200 ease-out hover:shadow-md relative
@@ -58,7 +45,7 @@ const ListItem: React.FC<ListItemProps> = ({
         className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 p-2 -m-2"
         style={{ touchAction: 'none' }}
         onPointerDown={(e) => onPointerStart(e, index)}
-        onPointerMove={(e) => onPointerMove(e, index)}
+        onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
       >

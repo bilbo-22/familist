@@ -45,7 +45,8 @@ const App: React.FC = () => {
   const pointerStartY = useRef<number>(0);
   const touchDraggedElement = useRef<HTMLElement | null>(null);
   const isDragging = useRef<boolean>(false);
-  const DRAG_THRESHOLD = 10; // pixels
+  const MOUSE_DRAG_THRESHOLD = 4; // pixels
+  const TOUCH_PEN_DRAG_THRESHOLD = 10; // pixels
 
   useEffect(() => {
     itemsRef.current = items;
@@ -277,36 +278,8 @@ const App: React.FC = () => {
     api.deleteItem(id).catch(console.error);
   }, []);
 
-  // --- Drag and Drop Handlers ---
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    dragItem.current = index;
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragEnter = (e: React.DragEvent, index: number) => {
-    dragOverItem.current = index;
-
-    if (dragItem.current !== null && dragItem.current !== index) {
-      const fromIndex = dragItem.current;
-      setItems(prev => reorderActiveItemsInList(prev, fromIndex, index));
-
-      dragItem.current = index;
-    }
-  };
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    dragItem.current = null;
-    dragOverItem.current = null;
-
-    // Send the new order to the server
-    const currentListItems = itemsRef.current.filter(i => i.listId === activeListId);
-    api.updateListOrder(activeListId, currentListItems).catch(console.error);
-  };
-
-  // --- Pointer Event Handlers for Mobile/Desktop ---
+  // --- Pointer Event Handlers (Unified for Mobile/Desktop) ---
   const handlePointerStart = (e: React.PointerEvent, index: number) => {
-    // Desktop mouse uses native HTML5 drag on the row.
-    if (e.pointerType === 'mouse') return;
     if (index < 0) return;
     dragItem.current = index;
     dragOverItem.current = index;
@@ -321,12 +294,15 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePointerMove = (e: React.PointerEvent, index: number) => {
-    if (e.pointerType === 'mouse') return;
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (dragItem.current === null) return;
 
     const pointerY = e.clientY;
-    if (!isDragging.current && Math.abs(pointerY - pointerStartY.current) < DRAG_THRESHOLD) {
+    const dragThreshold = e.pointerType === 'mouse'
+      ? MOUSE_DRAG_THRESHOLD
+      : TOUCH_PEN_DRAG_THRESHOLD;
+
+    if (!isDragging.current && Math.abs(pointerY - pointerStartY.current) < dragThreshold) {
       return;
     }
     isDragging.current = true;
@@ -441,9 +417,6 @@ const App: React.FC = () => {
               item={item}
               onToggle={toggleItem}
               onDelete={deleteItem}
-              onDragStart={handleDragStart}
-              onDragEnter={handleDragEnter}
-              onDragEnd={handleDragEnd}
               onPointerStart={handlePointerStart}
               onPointerMove={handlePointerMove}
               onPointerEnd={handlePointerEnd}
@@ -469,11 +442,8 @@ const App: React.FC = () => {
               item={item}
               onToggle={toggleItem}
               onDelete={deleteItem}
-              onDragStart={(e) => e.preventDefault()}
-              onDragEnter={(e) => { }}
-              onDragEnd={(e) => { }}
               onPointerStart={(e) => { }}
-              onPointerMove={(e) => { }}
+              onPointerMove={() => { }}
               onPointerEnd={() => { }}
             />
           ))}
