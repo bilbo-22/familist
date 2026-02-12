@@ -305,6 +305,8 @@ const App: React.FC = () => {
 
   // --- Pointer Event Handlers for Mobile/Desktop ---
   const handlePointerStart = (e: React.PointerEvent, index: number) => {
+    // Desktop mouse uses native HTML5 drag on the row.
+    if (e.pointerType === 'mouse') return;
     if (index < 0) return;
     dragItem.current = index;
     dragOverItem.current = index;
@@ -320,6 +322,7 @@ const App: React.FC = () => {
   };
 
   const handlePointerMove = (e: React.PointerEvent, index: number) => {
+    if (e.pointerType === 'mouse') return;
     if (dragItem.current === null) return;
 
     const pointerY = e.clientY;

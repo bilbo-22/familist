@@ -56,13 +56,14 @@ const ListItem: React.FC<ListItemProps> = ({
       {/* Drag Handle - Mobile dragging only works here */}
       <div
         className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 p-2 -m-2"
+        draggable={false}
         style={{ touchAction: 'none' }}
         onPointerDown={(e) => onPointerStart(e, index)}
         onPointerMove={(e) => onPointerMove(e, index)}
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
       >
-        <GripVertical size={18} />
+        <GripVertical size={18} className="pointer-events-none" />
       </div>
 
       {/* Checkbox Area */}
