@@ -42,12 +42,13 @@ const ListItem: React.FC<ListItemProps> = ({
       className={`
         group flex items-center gap-3 p-4 mb-3 rounded-xl shadow-sm border 
         transition-all duration-200 ease-out hover:shadow-md relative
-        cursor-grab active:cursor-grabbing
         ${containerStateClass}
       `}
     >
       <div
-        className="text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 p-2 -m-2"
+        className={`text-gray-300 dark:text-gray-600 hover:text-gray-500 -ml-1 p-2 -m-2 ${
+          isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+        }`}
         style={{ touchAction: 'none' }}
         onPointerDown={(e) => onPointerStart(e, index)}
         onPointerMove={onPointerMove}
