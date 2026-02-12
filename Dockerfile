@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -12,7 +12,7 @@ ENV VITE_APP_PASSWORD=$VITE_APP_PASSWORD
 RUN npm run build
 
 # Stage 2: Production
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
